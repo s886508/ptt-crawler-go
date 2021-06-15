@@ -21,12 +21,16 @@ const (
 )
 
 // GetArticles retrieves ptt articles from web.
-func GetArticles(firstPage int32, lastPage int32, board string) []*article.Article {
-	url := fmt.Sprintf("%s/bbs/%s/index.html", pttUrl, board) // Last page
+func GetArticles(firstPage int64, lastPage int64, board string) []*article.Article {
+	var articles []*article.Article
+	for page := firstPage; page <= lastPage; page++ {
+		url := fmt.Sprintf("%s/bbs/%s/index%d.html", pttUrl, board, page) // Last page
 
-	articles, err := retrieveArticles(url)
-	if err != nil {
-		return nil
+		as, err := retrieveArticles(url)
+		if err != nil {
+			return nil
+		}
+		articles = append(articles, as...)
 	}
 	return articles
 }
@@ -74,7 +78,10 @@ func retrieveArticles(url string) ([]*article.Article, error) {
 		s := sels.Eq(i)
 		linkS := s.Find("div[class=title]>a[href]")
 		link, _ := linkS.Attr("href")
-		atlLink := fmt.Sprintf("%s/%s", pttUrl, link)
+		if len(link) == 0 {
+			continue
+		}
+		atlLink := fmt.Sprintf("%s%s", pttUrl, link)
 		if atl := retrieveSingleArticle(atlLink); atl != nil {
 			if len(atl.Author) == 0 {
 				atl.Author = s.Find("div[class=meta]>div[class=author]").Text()
@@ -95,7 +102,7 @@ func retrieveSingleArticle(url string) *article.Article {
 		return nil
 	}
 
-	log.Println("retrieve single article from: %s", url)
+	log.Println("retrieve single article from: ", url)
 	resp := httpReq(url)
 	if resp == nil {
 		log.Println("retrieve single article fail, empty response")
