@@ -8,6 +8,8 @@ ADD pkg/ src/pkg
 RUN cd src && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /go/bin/ptt-crawler cmd/ptt-crawler/main.go
 
 FROM alpine:3.13
-COPY --from=build-env /go/bin/ptt-crawler /
 
-ENTRYPOINT ["/ptt-crawler"]
+RUN mkdir -p /opt/crawler/data
+COPY --from=build-env /go/bin/ptt-crawler /opt/crawler
+
+ENTRYPOINT ["/opt/crawler/ptt-crawler"]

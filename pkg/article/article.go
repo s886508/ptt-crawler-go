@@ -3,6 +3,8 @@ package article
 import (
 	"encoding/json"
 	"io/ioutil"
+	"os"
+	"path"
 )
 
 type Article struct {
@@ -16,6 +18,10 @@ type Article struct {
 }
 
 func (a *Article) Save(filePath string, format bool) error {
+	err := os.MkdirAll(path.Dir(filePath), 0755)
+	if err != nil {
+		return err
+	}
 	if format {
 		b, err := json.Marshal(a)
 		if err != nil {

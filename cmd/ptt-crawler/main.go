@@ -28,7 +28,7 @@ func main() {
 	articles := crawler.GetArticles(*startPage, *endPage, *board)
 	for _, a := range articles {
 		if len(*outputDir) > 0 {
-			filePath := fmt.Sprintf("%s/%s.json", *outputDir, a.Id)
+			filePath := fmt.Sprintf("%s/%s/%s.json", *outputDir, *board, a.Id)
 			err := a.Save(filePath, false)
 			if err != nil {
 				log.Fatal(err)
