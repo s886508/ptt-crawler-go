@@ -3,6 +3,7 @@ package article
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
 )
@@ -43,4 +44,14 @@ func (a *Article) Save(filePath string, format bool) error {
 	}
 
 	return nil
+}
+
+func (a *Article) Dump() (string, error) {
+	b, err := json.MarshalIndent(a, "", " ")
+	if err != nil {
+		log.Println("fail to dump article to json: ", err.Error())
+		return "", err
+	}
+
+	return string(b), nil
 }

@@ -3,9 +3,11 @@ package crawler
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/s886508/ptt-crawler-go/pkg/article"
@@ -20,17 +22,30 @@ const (
 	MetaIndexCount
 )
 
+func sleepMoment() {
+	rand.Seed(time.Now().UnixNano())
+	tfs := rand.Int63n(20)
+	log.Printf("sleep for %d seconds to get next page\n", tfs)
+	time.Sleep(time.Duration(tfs) * time.Second)
+}
+
 // GetArticles retrieves ptt articles from web.
 func GetArticles(firstPage int64, lastPage int64, board string) []*article.Article {
 	var articles []*article.Article
 	for page := firstPage; page <= lastPage; page++ {
+		log.Printf("retrieve articles from board: %s, page: %d", board, page)
 		url := fmt.Sprintf("%s/bbs/%s/index%d.html", pttUrl, board, page) // Last page
 
 		as, err := retrieveArticles(url)
 		if err != nil {
 			return nil
 		}
+
 		articles = append(articles, as...)
+
+		if page != lastPage {
+			sleepMoment()
+		}
 	}
 	return articles
 }
