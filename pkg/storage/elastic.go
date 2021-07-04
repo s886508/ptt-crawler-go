@@ -58,13 +58,13 @@ func (s *ESStorage) AddDocument(docId string, doc string, board string) error {
 
 	resp, err := req.Do(context.Background(), s.client)
 	if err != nil {
-		log.Println("index request fail: ", err.Error())
+		log.Printf("index request fail, doc id: %s, err: %s\n", docId, err.Error())
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.IsError() {
-		log.Println("index document error: ", resp.Status())
+		log.Printf("index document error, doc id: %s, err: %s ", docId, resp.Status())
 		return fmt.Errorf("index document error")
 	}
 

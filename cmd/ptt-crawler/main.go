@@ -1,10 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/s886508/ptt-crawler-go/pkg/article"
 	"github.com/s886508/ptt-crawler-go/pkg/crawler"
@@ -31,59 +31,62 @@ func main() {
 		log.Fatal("invalid page numbers")
 	}
 
-	var s *storage.ESStorage = nil
-	if len(*esServer) > 0 {
-		s = &storage.ESStorage{}
-		err := s.Init(*esServer)
-		if err != nil {
-			return
-		}
+	articles := crawler.GetArticles(*startPage, *endPage, *board)
+
+	// output as files
+	if len(*outputDir) > 0 {
+		saveToFile(*outputDir, *board, articles)
 	}
 
-	articles := crawler.GetArticles(*startPage, *endPage, *board)
-	for _, a := range articles {
-		// output as files
-		saveToFile(*outputDir, *board, a)
-
+	if len(*esServer) > 0 {
 		// output to elasticsearch
-		saveToElastic(s, *board, a)
+		saveToElastic(*esServer, *board, articles)
+	}
 
-		// output to stdout if no ouput option is specified
-		printToScreen(*outputDir, *esServer, a)
+	// output to stdout if no ouput option is specified
+	if len(*outputDir) == 0 && len(*esServer) == 0 {
+		printToScreen(articles)
 	}
 }
 
-func saveToFile(dir string, board string, article *article.Article) {
+func saveToFile(dir string, board string, articles []*article.Article) {
 	if len(dir) == 0 {
 		return
 	}
 
-	filePath := fmt.Sprintf("%s/%s/%s.json", dir, board, article.Id)
-	err := article.Save(filePath, false)
-	if err != nil {
-		log.Fatal(err)
+	for _, article := range articles {
+		filePath := fmt.Sprintf("%s/%s/%s.json", dir, board, article.Id)
+		err := article.Save(filePath, false)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
-func saveToElastic(s *storage.ESStorage, board string, article *article.Article) {
-	if s == nil {
-		return
-	}
-	content, err := article.Dump()
+func saveToElastic(eshost string, board string, articles []*article.Article) {
+	s := &storage.ESStorage{}
+	err := s.Init(eshost)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = s.AddDocument(article.Id, content, board)
-	if err != nil {
-		log.Fatal(err)
+	for _, article := range articles {
+		content, err := article.Dump()
+		if err != nil {
+			continue
+		}
+
+		err = s.AddDocument(article.Id, content, board)
+		if err != nil {
+			continue
+		}
 	}
 }
 
-func printToScreen(dir string, elastic string, article *article.Article) {
-	if len(dir) > 0 || len(elastic) > 0 {
-		return
+func printToScreen(articles []*article.Article) {
+	b, err := json.MarshalIndent(articles, "", " ")
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	fmt.Printf("%s\n%v\n%s\n\n", strings.Repeat("%", 80), article, strings.Repeat("%", 80))
+	fmt.Println(string(b))
 }
