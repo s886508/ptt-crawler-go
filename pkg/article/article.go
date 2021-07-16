@@ -9,13 +9,14 @@ import (
 )
 
 type Article struct {
-	Id      string `json:"id"`
-	Title   string `json:"title"`
-	Author  string `json:"author"`
-	Board   string `json:"board"`
-	Content string `json:"content"`
-	Date    string `json:"date"`
-	SrcIp   string `json:"srcip"`
+	Id       string     `json:"id"`
+	Title    string     `json:"title"`
+	Author   string     `json:"author"`
+	Board    string     `json:"board"`
+	Content  string     `json:"content"`
+	Date     string     `json:"date"`
+	SrcIp    string     `json:"srcip"`
+	Comments []*Comment `json:"comments"`
 }
 
 func (a *Article) Save(filePath string, format bool) error {

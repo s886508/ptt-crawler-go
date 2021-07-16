@@ -177,12 +177,47 @@ func retrieveSingleArticle(url string) *article.Article {
 
 	// process push messages
 	pushes := mainSel.Find("div[class=push]")
-	//	for i := range pushes.Nodes {
-	//	}
+	article.Comments = retrieveComments(pushes)
 	pushes.Remove()
 
 	// process content
 	article.Content = mainSel.Text()
 
 	return article
+}
+
+func retrieveComments(pushSel *goquery.Selection) []*article.Comment {
+	comments := make([]*article.Comment, 0)
+	for i := range pushSel.Nodes {
+		comment := &article.Comment{}
+		p := pushSel.Eq(i).Children()
+		// comment type
+		typeSel := p.Eq(0)
+		switch strings.TrimSpace(typeSel.Text()) {
+		case "->":
+			comment.Type = article.CommentTypeNeutral
+		case "推":
+			comment.Type = article.CommentTypeLike
+		case "噓":
+			comment.Type = article.CommentTypeBoo
+		}
+
+		// comment author
+		authorSel := p.Eq(1)
+		comment.Author = strings.TrimSpace(authorSel.Text())
+
+		// comment content
+		contentSel := p.Eq(2)
+		comment.Content = strings.TrimPrefix(contentSel.Text(), ": ")
+
+		// comment ip and date
+		metaSel := p.Eq(3)
+		metaText := strings.SplitN(strings.TrimSpace(metaSel.Text()), " ", 2)
+		comment.SrcIp = metaText[0]
+		comment.Date = metaText[1]
+
+		comments = append(comments, comment)
+
+	}
+	return comments
 }
